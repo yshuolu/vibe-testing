@@ -10,24 +10,26 @@ Vibe testing means you actually *use* the thing you just built. You run it. You 
 
 We use [playwright-cli](https://github.com/yshuolu/playwright-cli) for browser testing. It's designed specifically for agents verifying code changes against running apps. The biggest problem with standard Playwright tooling is authentication — the agent launches a clean browser with no sessions, hits a login wall, and gives up. playwright-cli solves this by automatically copying the developer's Chrome profile, extracting cookies and localStorage via CDP, and injecting them into a fresh Playwright browser. The agent gets an authenticated session in one command, no login flow needed.
 
-Clone and install (one-time setup):
+Clone and install inside the project (one-time setup):
 
 ```bash
-git clone https://github.com/yshuolu/playwright-cli.git ~/playwright-cli
-cd ~/playwright-cli && npm install
+git clone https://github.com/yshuolu/playwright-cli.git .claude/tools/playwright-cli
+cd .claude/tools/playwright-cli && npm install
 ```
+
+Make sure `.claude/tools/` is in `.gitignore` so it doesn't get committed to the project repo.
 
 Run commands via:
 
 ```bash
-npx tsx ~/playwright-cli/src/cli.ts <command>
+npx tsx .claude/tools/playwright-cli/src/cli.ts <command>
 ```
 
 ### Verify
 
 ```bash
-npx tsx ~/playwright-cli/src/cli.ts -h
-npx tsx ~/playwright-cli/src/cli.ts profiles
+npx tsx .claude/tools/playwright-cli/src/cli.ts -h
+npx tsx .claude/tools/playwright-cli/src/cli.ts profiles
 ```
 
 ## The Three Rules
@@ -102,32 +104,32 @@ For any UI or fullstack change, use `playwright-cli` to open a browser and inter
 
 ```bash
 # Open — with auth state from developer's Chrome
-npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies
-npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies --profile "Work"
+npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000 --cookies
+npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000 --cookies --profile "Work"
 
 # Open — without auth (public pages, or after manual login)
-npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000
+npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000
 
 # Screenshot / snapshot
-npx tsx ~/playwright-cli/src/cli.ts screenshot --output /tmp/page.png
-npx tsx ~/playwright-cli/src/cli.ts snapshot
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/page.png
+npx tsx .claude/tools/playwright-cli/src/cli.ts snapshot
 
 # Navigate
-npx tsx ~/playwright-cli/src/cli.ts navigate http://localhost:3000/dashboard
+npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/dashboard
 
 # Interact
-npx tsx ~/playwright-cli/src/cli.ts click "text=Sign In"
-npx tsx ~/playwright-cli/src/cli.ts fill "#email" "test@example.com"
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "text=Sign In"
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "#email" "test@example.com"
 
 # Execute Playwright code
-npx tsx ~/playwright-cli/src/cli.ts exec "return await page.title();"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.title();"
 
 # Observe
-npx tsx ~/playwright-cli/src/cli.ts console
-npx tsx ~/playwright-cli/src/cli.ts network --method POST
+npx tsx .claude/tools/playwright-cli/src/cli.ts console
+npx tsx .claude/tools/playwright-cli/src/cli.ts network --method POST
 
 # Close
-npx tsx ~/playwright-cli/src/cli.ts close
+npx tsx .claude/tools/playwright-cli/src/cli.ts close
 ```
 
 ## When You Get Blocked

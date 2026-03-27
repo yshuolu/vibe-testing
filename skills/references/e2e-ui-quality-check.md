@@ -10,19 +10,20 @@ When you take a screenshot, don't just check "did it render." Check if it looks 
 
 Apple uses an **8pt grid**. Most well-designed apps do too. The universal rule: spacing should be consistent and intentional.
 
-When you screenshot a page, check:
+Take a screenshot and look:
 
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/quality.png
 ```
-browser_screenshot
-browser_evaluate: (() => {
+
+Then measure programmatically:
+
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "
   const el = document.querySelector('.your-element');
   const style = window.getComputedStyle(el);
-  return {
-    padding: style.padding,
-    margin: style.margin,
-    gap: style.gap
-  };
-})()
+  return { padding: style.padding, margin: style.margin, gap: style.gap };
+"
 ```
 
 **What to catch:**
@@ -31,8 +32,8 @@ browser_evaluate: (() => {
 - **Uneven margins** — left margin is 16px but right margin is 12px. Or top/bottom padding differs on elements that should be symmetric.
 - **Cramped interactive elements** — buttons, links, and inputs should have at least 8px of breathing room between them. If two buttons are touching or nearly touching, that's a bug.
 
-```
-browser_evaluate: (() => {
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "
   const items = document.querySelectorAll('.card');
   const gaps = [];
   for (let i = 1; i < items.length; i++) {
@@ -41,7 +42,7 @@ browser_evaluate: (() => {
     gaps.push(Math.round(curr.top - prev.bottom));
   }
   return { gaps, consistent: new Set(gaps).size === 1 };
-})()
+"
 ```
 
 ## Alignment
@@ -54,13 +55,13 @@ Misalignment is the #1 thing that makes UI look amateur. Your eye catches it ins
 - **Baseline misalignment** — text next to an icon where the text is 2px higher than the icon. Text in a row of columns where the baselines don't match.
 - **Grid breaks** — one card in a row that's a different height or width than its siblings.
 
-```
-browser_evaluate: (() => {
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "
   const items = document.querySelectorAll('.nav-item');
   const lefts = Array.from(items).map(el => el.getBoundingClientRect().left);
   const tops = Array.from(items).map(el => el.getBoundingClientRect().top);
   return { lefts, tops, alignedLeft: new Set(lefts).size === 1, alignedTop: new Set(tops).size === 1 };
-})()
+"
 ```
 
 ## Contrast
@@ -81,8 +82,8 @@ If you can't read the text easily, neither can the user. Apple defers to WCAG he
 
 Check it programmatically:
 
-```
-browser_evaluate: (() => {
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "
   function luminance(r, g, b) {
     const [rs, gs, bs] = [r, g, b].map(c => {
       c = c / 255;
@@ -98,7 +99,6 @@ browser_evaluate: (() => {
     const m = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
     return m ? [+m[1], +m[2], +m[3]] : null;
   }
-
   const issues = [];
   document.querySelectorAll('p, span, a, h1, h2, h3, h4, h5, h6, label, button, li, td, th').forEach(el => {
     const style = window.getComputedStyle(el);
@@ -121,7 +121,7 @@ browser_evaluate: (() => {
     }
   });
   return issues.length ? { pass: false, issues } : { pass: true };
-})()
+"
 ```
 
 **Note:** This script checks direct background colors. Text on images or gradients needs visual inspection from the screenshot — there's no shortcut. Look at the screenshot.
@@ -132,10 +132,10 @@ Apple's rule: **minimum 44x44 points for any interactive element.** On the web t
 
 Tiny buttons and links are a real usability problem. Check it:
 
-```
-browser_evaluate: (() => {
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "
   const issues = [];
-  document.querySelectorAll('a, button, input, select, [role="button"], [onclick]').forEach(el => {
+  document.querySelectorAll('a, button, input, select, [role=\"button\"], [onclick]').forEach(el => {
     const rect = el.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0 && (rect.width < 44 || rect.height < 44)) {
       issues.push({
@@ -147,7 +147,7 @@ browser_evaluate: (() => {
     }
   });
   return issues.length ? { pass: false, issues } : { pass: true };
-})()
+"
 ```
 
 ## Typography
@@ -158,8 +158,8 @@ browser_evaluate: (() => {
 - **Line length** — comfortable reading is 45-80 characters per line. If text stretches full-width on a 1440px monitor, it's too wide.
 - **Line height** — body text should have at least 1.4-1.6x line-height. If lines of text are cramped together, flag it.
 
-```
-browser_evaluate: (() => {
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "
   const body = document.querySelector('p, .content, main p, article p');
   if (!body) return { note: 'no body text found' };
   const style = window.getComputedStyle(body);
@@ -169,7 +169,7 @@ browser_evaluate: (() => {
   const width = body.getBoundingClientRect().width;
   const charsPerLine = Math.round(width / (fontSize * 0.5));
   return {
-    fontSize: fontSize,
+    fontSize,
     lineHeightRatio: Math.round(ratio * 100) / 100,
     approxCharsPerLine: charsPerLine,
     issues: [
@@ -178,7 +178,7 @@ browser_evaluate: (() => {
       charsPerLine > 80 ? 'lines too wide (> 80 chars)' : null
     ].filter(Boolean)
   };
-})()
+"
 ```
 
 ## The Eyeball Test

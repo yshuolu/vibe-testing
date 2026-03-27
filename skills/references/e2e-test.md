@@ -13,7 +13,7 @@ This is the whole point of vibe testing. You interact with the running applicati
 If the app requires login, use `--cookies` to steal the developer's browser session:
 
 ```bash
-npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies
+npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000 --cookies
 ```
 
 This automatically:
@@ -26,15 +26,15 @@ This automatically:
 Take a snapshot to verify you're logged in:
 
 ```bash
-npx tsx ~/playwright-cli/src/cli.ts snapshot
+npx tsx .claude/tools/playwright-cli/src/cli.ts snapshot
 ```
 
 If you see a login page instead of authenticated content, the session is expired or the wrong profile was used. Try `--profile`:
 
 ```bash
-npx tsx ~/playwright-cli/src/cli.ts profiles
-npx tsx ~/playwright-cli/src/cli.ts close
-npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies --profile "Work"
+npx tsx .claude/tools/playwright-cli/src/cli.ts profiles
+npx tsx .claude/tools/playwright-cli/src/cli.ts close
+npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000 --cookies --profile "Work"
 ```
 
 If no profile has a valid session, create a real test user. See [Test Users](./e2e-auth-test-user.md) for the methodology and framework-specific examples.

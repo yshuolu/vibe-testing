@@ -6,43 +6,22 @@ This is the playbook agents most often skip or half-ass. "The component renders,
 
 ## Setup
 
-Playwright MCP (install once at user level):
+playwright-cli must be installed (see [skill.md Setup](../skill.md#setup)).
+
+Start the app. Discover the actual start command — don't blindly run `npm run dev`. Every project is different.
 
 ```bash
-claude mcp add --scope user playwright-mcp -- npx @anthropic-ai/mcp-playwright@latest
-```
-
-Discover the actual start command — don't blindly run `npm run dev`. Every project is different.
-
-```bash
-# Check package.json, Makefile, docker-compose, README
 cat package.json | grep -E '"dev"|"start"|"serve"' 2>/dev/null
 grep -E '^[a-z].*:' Makefile 2>/dev/null | grep -i 'run\|dev\|serve'
 ls docker-compose*.yml 2>/dev/null
 head -100 README.md 2>/dev/null | grep -i -A2 'run\|start\|dev\|setup'
 ```
 
-Some projects are a single process (`npm run dev`), some have separate frontend/backend, some use Docker (`docker-compose up -d`). Read the project's own docs. Always log to a temp file so you can diagnose failures:
+Always log to a temp file so you can diagnose failures:
 
 ```bash
-# e.g. single process
 npm run dev > /tmp/app-startup.log 2>&1 &
-
-# e.g. separate services
-cd backend && npm run dev > /tmp/backend.log 2>&1 &
-cd frontend && npm run dev > /tmp/frontend.log 2>&1 &
-```
-
-Wait, then tail the logs to confirm it's up:
-
-```bash
 sleep 3 && tail -50 /tmp/app-startup.log
-
-# full-stack: check both
-tail -20 /tmp/backend.log
-tail -20 /tmp/frontend.log
-curl -s localhost:8000/api/health > /dev/null && echo "backend up"
-curl -s localhost:3000/ > /dev/null && echo "frontend up"
 ```
 
 If it fails, the logs tell you why. See [local env setup](./local-env-secrets.md) if it's about missing secrets.
@@ -66,9 +45,9 @@ If your change is frontend-only, skip this step.
 
 ## Step 2: Navigate and Look
 
-```
-browser_navigate: http://localhost:3000/path/to/page
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000/path/to/page --cookies
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/page.png
 ```
 
 **Actually examine the screenshot.** Don't just confirm "it renders." Check:
@@ -84,32 +63,32 @@ Now run the **[UI Quality Check](./e2e-ui-quality-check.md)** — spacing, align
 
 Do exactly what a user would do to exercise your change:
 
-```
-browser_click: "Submit"                              # click a button
-browser_fill: [name="email"], test@example.com       # fill a field
-browser_select_option: [name="country"], US           # pick a dropdown
-browser_hover: .tooltip-trigger                       # hover for tooltip
-browser_press_key: Enter                              # keyboard
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Submit"
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='email']" "test@example.com"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.selectOption('[name=\"country\"]', 'US');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.hover('.tooltip-trigger');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.keyboard.press('Enter');"
 ```
 
 **Screenshot after every meaningful interaction.** Non-negotiable.
 
-```
-browser_click: "Add to Cart"
-browser_screenshot    # cart count updated? toast appeared?
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Add to Cart"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/after-add.png
 
-browser_fill: [name="search"], "test query"
-browser_press_key: Enter
-browser_screenshot    # results appeared?
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='search']" "test query"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.keyboard.press('Enter');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/search-results.png
 ```
 
 When screenshots aren't enough, verify with code:
 
-```
-browser_get_text: .success-message
-browser_evaluate: document.querySelector('#btn').disabled
-browser_evaluate: document.querySelector('.list').children.length
-browser_wait_for_selector: .modal-overlay
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.textContent('.success-message');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.locator('#btn').isDisabled();"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.locator('.list').locator('> *').count();"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.waitForSelector('.modal-overlay');"
 ```
 
 ---
@@ -119,13 +98,13 @@ browser_wait_for_selector: .modal-overlay
 If your change involves data, test the entire lifecycle through the UI. At each step, cross-check with the API to verify both layers agree.
 
 **Create:**
-```
-browser_navigate: http://localhost:3000/items/new
-browser_fill: [name="title"], "Vibe Test Item"
-browser_fill: [name="description"], "Created during testing"
-browser_fill: [name="price"], "29.99"
-browser_click: "Create"
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/items/new
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='title']" "Vibe Test Item"
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='description']" "Created during testing"
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='price']" "29.99"
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Create"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/created.png
 ```
 
 Cross-check:
@@ -134,19 +113,19 @@ curl -s http://localhost:8000/api/items?sort=created_at:desc | jq '.[0]'
 ```
 
 **Read:**
-```
-browser_navigate: http://localhost:3000/items
-browser_screenshot   # item in the list?
-browser_click: "Vibe Test Item"
-browser_screenshot   # detail page correct?
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/items
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/list.png
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Vibe Test Item"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/detail.png
 ```
 
 **Update:**
-```
-browser_click: "Edit"
-browser_fill: [name="title"], "Updated Test Item"
-browser_click: "Save"
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Edit"
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='title']" "Updated Test Item"
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Save"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/updated.png
 ```
 
 Cross-check:
@@ -155,10 +134,10 @@ curl -s http://localhost:8000/api/items/$ID | jq '.title'
 ```
 
 **Delete:**
-```
-browser_click: "Delete"
-browser_click: "Confirm"
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Delete"
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Confirm"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/deleted.png
 ```
 
 Cross-check:
@@ -176,30 +155,30 @@ Both sides agree at every step. That's the test.
 This is where the real bugs live:
 
 **Empty state:**
-```
-browser_navigate: http://localhost:3000/items?filter=nonexistent
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts navigate "http://localhost:3000/items?filter=nonexistent"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/empty.png
 ```
 
 **Error state:**
-```
-browser_fill: [name="email"], not-an-email
-browser_click: "Submit"
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='email']" "not-an-email"
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Submit"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/error.png
 ```
 
 **Loading state:**
-```
-browser_click: "Load Data"
-browser_screenshot    # spinner/skeleton visible?
-browser_wait_for_selector: .data-table
-browser_screenshot    # data loaded?
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Load Data"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/loading.png
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.waitForSelector('.data-table');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/loaded.png
 ```
 
 **Long content:**
-```
-browser_fill: [name="title"], "This is an extremely long title that might overflow the container and break the layout entirely"
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='title']" "This is an extremely long title that might overflow the container and break the layout entirely"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/overflow.png
 ```
 
 ---
@@ -209,10 +188,10 @@ browser_screenshot
 The sneakiest full-stack bugs: validation passes on one layer but fails on the other.
 
 **Frontend validation:**
-```
-browser_navigate: http://localhost:3000/items/new
-browser_click: "Create"    # submit empty form
-browser_screenshot          # client-side errors shown?
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/items/new
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Create"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/validation.png
 ```
 
 **Backend validation (bypass the UI):**
@@ -222,10 +201,10 @@ curl -s -X POST http://localhost:8000/api/items \
 ```
 
 **Backend errors in the UI:**
-```
-browser_fill: [name="email"], "duplicate@example.com"
-browser_click: "Create"
-browser_screenshot    # does UI show "email already exists"?
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts fill "[name='email']" "duplicate@example.com"
+npx tsx .claude/tools/playwright-cli/src/cli.ts click "Create"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/backend-error.png
 ```
 
 ---
@@ -239,56 +218,52 @@ API_DATA=$(curl -s http://localhost:8000/api/items/1)
 echo "$API_DATA" | jq .
 ```
 
-```
-browser_navigate: http://localhost:3000/items/1
-browser_get_text: .item-title
-browser_get_text: .item-price
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/items/1
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.textContent('.item-title');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.textContent('.item-price');"
 # Do these match the API response? If not, you found a bug.
 ```
 
 ---
 
-## Step 8: Auth Flows (If Applicable)
+## Step 8: Responsive Check (If Layout Changed)
 
-```
-# Unauthenticated → redirects to login?
-browser_navigate: http://localhost:3000/dashboard
-browser_screenshot
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.setViewportSize({ width: 375, height: 812 });"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/mobile.png
 
-# Login
-browser_fill: [name="email"], testuser@example.com
-browser_fill: [name="password"], testpassword
-browser_click: "Log In"
-browser_screenshot    # dashboard loads with user info?
-```
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.setViewportSize({ width: 768, height: 1024 });"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/tablet.png
 
----
-
-## Step 9: Responsive Check (If Layout Changed)
-
-```
-browser_evaluate: window.resizeTo(375, 812)
-browser_screenshot    # mobile
-
-browser_evaluate: window.resizeTo(768, 1024)
-browser_screenshot    # tablet
-
-browser_evaluate: window.resizeTo(1440, 900)
-browser_screenshot    # back to desktop
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.setViewportSize({ width: 1440, height: 900 });"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/desktop.png
 ```
 
 ---
 
-## Step 10: Quick Accessibility Check
+## Step 9: Quick Accessibility Check
 
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.keyboard.press('Tab');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/focus1.png
+
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.keyboard.press('Tab');"
+npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/focus2.png
+
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "await page.keyboard.press('Enter');"
 ```
-browser_press_key: Tab
-browser_screenshot    # focus ring visible?
-browser_press_key: Tab
-browser_screenshot    # logical focus order?
-browser_press_key: Enter    # activates the focused element?
+
+Use the ARIA snapshot to verify semantic structure:
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts snapshot
 ```
 
 ---
 
 After everything: look at your screenshots. Does the UI match what the change was supposed to achieve? Any regressions in surrounding elements? Run the [UI Quality Check](./e2e-ui-quality-check.md) one more time on the final state.
+
+When done:
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts close
+```

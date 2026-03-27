@@ -27,8 +27,8 @@ npx skills add https://github.com/yshuolu/vibe-testing --skill vibe-testing
 This skill uses [playwright-cli](https://github.com/yshuolu/playwright-cli) for browser automation. Install it once:
 
 ```bash
-git clone https://github.com/yshuolu/playwright-cli.git ~/playwright-cli
-cd ~/playwright-cli && npm install
+git clone https://github.com/yshuolu/playwright-cli.git .claude/tools/playwright-cli
+cd .claude/tools/playwright-cli && npm install
 ```
 
 ## How Auth Works
