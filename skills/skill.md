@@ -100,22 +100,26 @@ See [E2E Testing](./references/e2e-test.md) for setup details, and [Test Users](
 
 For any UI or fullstack change, use `playwright-cli` to open a browser and interact with the running app.
 
+### Lifecycle
+
+1. **`open` once** — launches a browser window. First run extracts cookies (~20s). Subsequent runs reuse cached state (~2s). The browser stays open as a background process.
+2. **`navigate`, `click`, `fill`, `screenshot`, `snapshot`, `exec`** — interact with the open browser. Run as many as needed. Each command connects, acts, and exits instantly.
+3. **`close` once** — kills the browser when done.
+
+Do NOT close and reopen between tests. The browser stays alive. Use `navigate` to go to a new page.
+
 ### Commands
 
 ```bash
-# Open — with auth state from developer's Chrome
+# Open (do this once per testing session)
 npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000 --cookies
-npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000 --cookies --profile "Work"
 
-# Open — without auth (public pages, or after manual login)
-npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000
+# Navigate to different pages (browser is already open)
+npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/dashboard
 
 # Screenshot / snapshot
 npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/page.png
 npx tsx .claude/tools/playwright-cli/src/cli.ts snapshot
-
-# Navigate
-npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/dashboard
 
 # Interact
 npx tsx .claude/tools/playwright-cli/src/cli.ts click "text=Sign In"
@@ -128,7 +132,7 @@ npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.title();
 npx tsx .claude/tools/playwright-cli/src/cli.ts console
 npx tsx .claude/tools/playwright-cli/src/cli.ts network --method POST
 
-# Close
+# Close (when completely done with testing)
 npx tsx .claude/tools/playwright-cli/src/cli.ts close
 ```
 
