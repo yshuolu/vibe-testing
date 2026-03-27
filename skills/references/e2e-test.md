@@ -6,13 +6,42 @@ This is the whole point of vibe testing. You interact with the running applicati
 
 ## Prerequisites
 
-**Playwright MCP** must be installed (user-level):
+**playwright-cli** must be installed (see [Setup](../skill.md#setup)).
+
+## Auth
+
+If the app requires login, use `--cookies` to steal the developer's browser session:
 
 ```bash
-claude mcp add --scope user playwright-mcp -- npx @anthropic-ai/mcp-playwright@latest
+npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies
 ```
 
-**Start the app.** Figure out the project's actual start command — don't guess. Check these sources:
+This automatically:
+1. Finds the developer's default Chrome/Brave/Edge/Arc profile
+2. Copies it to a temp directory
+3. Extracts all cookies + localStorage for the target domain via CDP
+4. Injects them into a fresh Playwright browser
+5. Navigates to the URL
+
+Take a snapshot to verify you're logged in:
+
+```bash
+npx tsx ~/playwright-cli/src/cli.ts snapshot
+```
+
+If you see a login page instead of authenticated content, the session is expired or the wrong profile was used. Try `--profile`:
+
+```bash
+npx tsx ~/playwright-cli/src/cli.ts profiles
+npx tsx ~/playwright-cli/src/cli.ts close
+npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies --profile "Work"
+```
+
+If no profile has a valid session, create a real test user. See [Test Users](./e2e-auth-test-user.md) for the methodology and framework-specific examples.
+
+## Start the App
+
+Figure out the project's actual start command — don't guess. Check these sources:
 
 ```bash
 # Check package.json scripts

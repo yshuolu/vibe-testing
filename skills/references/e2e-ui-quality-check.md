@@ -1,4 +1,4 @@
-# UI Quality Check — The Obvious Stuff
+# UI Quality Check
 
 Reference: [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines)
 

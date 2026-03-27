@@ -6,10 +6,28 @@ Vibe testing means you actually *use* the thing you just built. You run it. You 
 
 ## Setup
 
-Install Playwright MCP at user level (do this once, works everywhere):
+### Install playwright-cli
+
+We use [playwright-cli](https://github.com/yshuolu/playwright-cli) for browser testing. It's designed specifically for agents verifying code changes against running apps. The biggest problem with standard Playwright tooling is authentication — the agent launches a clean browser with no sessions, hits a login wall, and gives up. playwright-cli solves this by automatically copying the developer's Chrome profile, extracting cookies and localStorage via CDP, and injecting them into a fresh Playwright browser. The agent gets an authenticated session in one command, no login flow needed.
+
+Clone and install (one-time setup):
 
 ```bash
-claude mcp add --scope user playwright-mcp -- npx @anthropic-ai/mcp-playwright@latest
+git clone https://github.com/yshuolu/playwright-cli.git ~/playwright-cli
+cd ~/playwright-cli && npm install
+```
+
+Run commands via:
+
+```bash
+npx tsx ~/playwright-cli/src/cli.ts <command>
+```
+
+### Verify
+
+```bash
+npx tsx ~/playwright-cli/src/cli.ts -h
+npx tsx ~/playwright-cli/src/cli.ts profiles
 ```
 
 ## The Three Rules
@@ -26,12 +44,103 @@ claude mcp add --scope user playwright-mcp -- npx @anthropic-ai/mcp-playwright@l
 
 No exceptions. If you didn't see it work in the running product, you didn't verify it.
 
+## E2E Auth Decision Tree
+
+When the app requires login, follow this tree:
+
+```
+Does the developer have a Chromium browser with an active session?
+│
+├─ YES (developer's desktop with Chrome/Brave/Edge/Arc)
+│   │
+│   │  playwright-cli open <url> --cookies
+│   │  (copies profile → extracts cookies + localStorage → injects → navigates)
+│   │
+│   └─ Take a snapshot. Are you on an authenticated page?
+│       ├─ YES → proceed with testing
+│       └─ NO (session expired, wrong profile) → fall through to test user ↓
+│
+└─ NO (CI, isolated env, or no valid session)
+    │
+    └─ Create/use a test user. Approach depends on the framework:
+        │
+        ├─ Next.js + Auth.js/NextAuth
+        │   Enable CredentialsProvider in dev. POST to /api/auth/callback/credentials.
+        │
+        ├─ Next.js + WorkOS
+        │   Use WorkOS staging API: createUser + authenticateWithPassword.
+        │
+        ├─ Firebase
+        │   Use Auth Emulator (localhost:9099). Create user + sign in via REST.
+        │   Server must have FIREBASE_AUTH_EMULATOR_HOST set.
+        │
+        ├─ Supabase
+        │   Local dev stack has a known JWT secret. Create user via CLI
+        │   or POST to localhost:54321/auth/v1/token.
+        │
+        ├─ Django
+        │   python manage.py createsuperuser. Login via /api/auth/login or
+        │   the admin at /admin.
+        │
+        ├─ Rails + Devise
+        │   Seed data or rails runner User.create!. Login via POST /users/sign_in.
+        │
+        ├─ Express + JWT
+        │   If JWT_SECRET is a known dev value, mint a token directly.
+        │   Otherwise register via POST /api/auth/register, login to get token.
+        │
+        ├─ Express + session/cookie
+        │   Register via POST /api/auth/register. Login, save cookie.
+        │
+        └─ Any other framework
+            Register through the app's own signup flow. Check seed data,
+            fixtures, and .env for existing test credentials first.
+```
+
+See [E2E Testing](./references/e2e-test.md) for setup details, and [Test Users](./references/e2e-auth-test-user.md) for the test user methodology and framework examples.
+
+## Browser Testing With playwright-cli
+
+For any UI or fullstack change, use `playwright-cli` to open a browser and interact with the running app.
+
+### Commands
+
+```bash
+# Open — with auth state from developer's Chrome
+npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies
+npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000 --cookies --profile "Work"
+
+# Open — without auth (public pages, or after manual login)
+npx tsx ~/playwright-cli/src/cli.ts open http://localhost:3000
+
+# Screenshot / snapshot
+npx tsx ~/playwright-cli/src/cli.ts screenshot --output /tmp/page.png
+npx tsx ~/playwright-cli/src/cli.ts snapshot
+
+# Navigate
+npx tsx ~/playwright-cli/src/cli.ts navigate http://localhost:3000/dashboard
+
+# Interact
+npx tsx ~/playwright-cli/src/cli.ts click "text=Sign In"
+npx tsx ~/playwright-cli/src/cli.ts fill "#email" "test@example.com"
+
+# Execute Playwright code
+npx tsx ~/playwright-cli/src/cli.ts exec "return await page.title();"
+
+# Observe
+npx tsx ~/playwright-cli/src/cli.ts console
+npx tsx ~/playwright-cli/src/cli.ts network --method POST
+
+# Close
+npx tsx ~/playwright-cli/src/cli.ts close
+```
+
 ## When You Get Blocked
 
 Two things block agents more than anything else: missing env vars and auth.
 
 - **Something not working?** Start the app first — don't preemptively hunt for secrets. Many projects just work. If the app fails to start OR starts but throws runtime errors, tail the log file. The error tells you what's wrong. If it's about missing env vars or secrets, see [Getting secrets to run locally](./references/local-env-secrets.md).
-- **Can't get past login?** [Auth & test users](./references/auth-test-user.md) — find or create test users, handle JWT vs cookie vs OAuth.
+- **Can't get past login?** See [E2E Testing → Auth](./references/e2e-test.md#auth). The `--cookies` flag handles most cases. If the session is expired, see [Test Users](./references/e2e-auth-test-user.md).
 
 ## The Flow
 
@@ -49,7 +158,7 @@ Every change follows this sequence:
 | Changed | Do this | Playbook |
 |---|---|---|
 | Backend API | `curl` the endpoints | [API testing](./references/e2e-server-api-test.md) |
-| Frontend UI or Full stack | Browser via Playwright MCP (+ API cross-check for full stack) | [UI & full-stack testing](./references/e2e-ui-and-fullstack.md) |
+| Frontend UI or Full stack | `playwright-cli open --cookies` + interact | [UI & full-stack testing](./references/e2e-ui-and-fullstack.md) |
 | CLI tool | Run it, check output | [CLI testing](./references/e2e-cli-tool-test.md) |
 | Library | Write a consumer script | [Library testing](./references/e2e-library-change-test.md) |
 

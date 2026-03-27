@@ -2,28 +2,42 @@
 
 This is a Claude Code skill repo. The skill teaches coding agents how to properly test and verify their code changes — not just run unit tests, but actually use the running product like a human QA would.
 
+## Dependencies
+
+This skill uses [playwright-cli](https://github.com/yshuolu/playwright-cli) for browser automation with built-in auth state injection.
+
 ## Repo Structure
 
 ```
 skills/
-  skill.md                            # The skill entry point (agents load this)
+  skill.md                       # Entry point: philosophy, auth decision tree, commands
   references/
-    unit-test.md                      # Unit testing playbook
-    e2e-test.md                       # E2E testing overview + routing
-    e2e-server-api-test.md            # API-only verification via curl
-    e2e-ui-and-fullstack.md           # UI + full-stack browser verification (combined)
-    e2e-ui-quality-check.md           # Visual quality: spacing, alignment, contrast, touch targets
-    e2e-cli-tool-test.md              # CLI tool verification
-    e2e-library-change-test.md        # Library/package verification via consumer scripts
-    auth-test-user.md                 # Auth workarounds: test user creation, JWT, cookies, OAuth
-    local-env-secrets.md              # Getting secrets to run locally: cloud CLIs, .env discovery
+    e2e-test.md                  # E2E setup: auth, start app, pick playbook
+    e2e-auth-test-user.md        # Test user: methodology + framework examples
+    e2e-server-api-test.md       # API verification via curl
+    e2e-ui-and-fullstack.md      # UI + full-stack browser verification
+    e2e-ui-quality-check.md      # Visual quality: spacing, contrast, alignment
+    e2e-cli-tool-test.md         # CLI tool verification
+    e2e-library-change-test.md   # Library/package verification via consumer scripts
+    unit-test.md                 # Unit testing playbook
+    local-env-secrets.md         # Getting secrets to run locally
 ```
 
-## How the Skill Works
+## Decision Tree
 
-- `skills/skill.md` is the main entry point. It defines the philosophy (three rules) and routes agents to the appropriate reference playbook based on what they changed.
-- Each reference file in `skills/references/` is a detailed, self-contained playbook for a specific testing scenario.
-- The `e2e-ui-quality-check.md` is referenced from the UI/full-stack playbook and provides concrete visual quality checks (Apple HIG-based numbers for spacing, contrast, alignment, touch targets).
+```
+skill.md (entry point)
+  ├─ Unit tests → unit-test.md
+  ├─ Start the app → local-env-secrets.md (if blocked)
+  └─ E2E test → e2e-test.md
+       ├─ Auth: --cookies (default)
+       │    └─ Fallback → e2e-auth-test-user.md
+       ├─ API → e2e-server-api-test.md
+       ├─ UI / Full-stack → e2e-ui-and-fullstack.md
+       │    └─ Quality check → e2e-ui-quality-check.md
+       ├─ CLI → e2e-cli-tool-test.md
+       └─ Library → e2e-library-change-test.md
+```
 
 ## Writing Style
 
