@@ -134,6 +134,13 @@ npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/page.pn
 npx tsx .claude/tools/playwright-cli/src/cli.ts click "text=Sign In"
 npx tsx .claude/tools/playwright-cli/src/cli.ts fill "#email" "test@example.com"
 
+# If fill doesn't work (contenteditable, rich text editors, custom inputs),
+# use exec with click + keyboard.type:
+npx tsx .claude/tools/playwright-cli/src/cli.ts exec "
+  await page.locator('[contenteditable]').click();
+  await page.keyboard.type('Hello world');
+"
+
 # Execute Playwright code
 npx tsx .claude/tools/playwright-cli/src/cli.ts exec "return await page.title();"
 
