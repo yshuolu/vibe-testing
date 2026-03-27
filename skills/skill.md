@@ -122,12 +122,14 @@ npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000 --coo
 # Navigate to different pages (browser is already open)
 npx tsx .claude/tools/playwright-cli/src/cli.ts navigate http://localhost:3000/dashboard
 
-# Snapshot — ARIA accessibility tree. Use for functionality testing:
-# verify elements exist, buttons are clickable, text content is correct.
+# Snapshot — use after EVERY navigation and interaction.
+# Returns the ARIA accessibility tree (text). Fast. Tells you what's on the page,
+# what elements exist, what state they're in. This is your primary verification tool.
 npx tsx .claude/tools/playwright-cli/src/cli.ts snapshot
 
-# Screenshot — PNG image. Use for visual testing:
-# verify layout, spacing, alignment, colors, overall appearance.
+# Screenshot — use ONLY for UI quality checks (layout, spacing, colors, alignment).
+# Do NOT use screenshot to check what page you're on or verify functionality.
+# That's what snapshot is for.
 npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/page.png
 
 # Interact
