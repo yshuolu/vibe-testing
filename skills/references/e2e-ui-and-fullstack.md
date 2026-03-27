@@ -43,14 +43,27 @@ If your change is frontend-only, skip this step.
 
 ---
 
-## Step 2: Navigate and Look
+## Step 2: Navigate and Verify
 
 ```bash
 npx tsx .claude/tools/playwright-cli/src/cli.ts open http://localhost:3000/path/to/page --cookies
+```
+
+Use **two tools** for two different kinds of verification:
+
+**Snapshot (ARIA tree) — for functionality testing.** Verify elements exist, text is correct, buttons and links are present, form fields have the right labels.
+
+```bash
+npx tsx .claude/tools/playwright-cli/src/cli.ts snapshot
+```
+
+**Screenshot (PNG) — for visual testing.** Verify layout, spacing, alignment, colors, and overall appearance.
+
+```bash
 npx tsx .claude/tools/playwright-cli/src/cli.ts screenshot --output /tmp/page.png
 ```
 
-**Actually examine the screenshot.** Don't just confirm "it renders." Check:
+Examine the screenshot. Don't just confirm "it renders." Check:
 - Is the thing you changed visible?
 - Is anything obviously broken?
 - Does the spacing look even? Alignment clean? Text readable?
