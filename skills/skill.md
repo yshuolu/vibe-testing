@@ -44,57 +44,52 @@ npx tsx ~/playwright-cli/src/cli.ts profiles
 
 No exceptions. If you didn't see it work in the running product, you didn't verify it.
 
-## E2E Auth Decision Tree
-
-When the app requires login, follow this tree:
+## E2E Decision Tree
 
 ```
-Does the developer have a Chromium browser with an active session?
+Detect environment:
 │
-├─ YES (developer's desktop with Chrome/Brave/Edge/Arc)
+│  Is there a local Chromium browser with a user profile?
+│  (Chrome, Brave, Edge, or Arc installed with at least one profile)
+│
+├─ YES → likely a developer's laptop → SCENARIO A
+├─ NO  → likely an isolated environment → SCENARIO B
+└─ UNCLEAR → ask the developer
+│
+├─ SCENARIO A: Developer's laptop
+│   │
+│   │  No plumbing needed — just use the existing browser session.
 │   │
 │   │  playwright-cli open <url> --cookies
-│   │  (copies profile → extracts cookies + localStorage → injects → navigates)
 │   │
-│   └─ Take a snapshot. Are you on an authenticated page?
-│       ├─ YES → proceed with testing
-│       └─ NO (session expired, wrong profile) → fall through to test user ↓
+│   └─ Take a snapshot. Logged in?
+│       ├─ YES → go to Test ↓
+│       └─ NO (expired, wrong profile) → try --profile, or switch to Scenario B
 │
-└─ NO (CI, isolated env, or no valid session)
-    │
-    └─ Create/use a test user. Approach depends on the framework:
-        │
-        ├─ Next.js + Auth.js/NextAuth
-        │   Enable CredentialsProvider in dev. POST to /api/auth/callback/credentials.
-        │
-        ├─ Next.js + WorkOS
-        │   Use WorkOS staging API: createUser + authenticateWithPassword.
-        │
-        ├─ Firebase
-        │   Use Auth Emulator (localhost:9099). Create user + sign in via REST.
-        │   Server must have FIREBASE_AUTH_EMULATOR_HOST set.
-        │
-        ├─ Supabase
-        │   Local dev stack has a known JWT secret. Create user via CLI
-        │   or POST to localhost:54321/auth/v1/token.
-        │
-        ├─ Django
-        │   python manage.py createsuperuser. Login via /api/auth/login or
-        │   the admin at /admin.
-        │
-        ├─ Rails + Devise
-        │   Seed data or rails runner User.create!. Login via POST /users/sign_in.
-        │
-        ├─ Express + JWT
-        │   If JWT_SECRET is a known dev value, mint a token directly.
-        │   Otherwise register via POST /api/auth/register, login to get token.
-        │
-        ├─ Express + session/cookie
-        │   Register via POST /api/auth/register. Login, save cookie.
-        │
-        └─ Any other framework
-            Register through the app's own signup flow. Check seed data,
-            fixtures, and .env for existing test credentials first.
+├─ SCENARIO B: Isolated environment (cloud agent, CI, no system browser)
+│   │
+│   │  No browser profile to steal from. The project must have test user
+│   │  plumbing — a real user in the DB + a middleware bypass.
+│   │
+│   └─ Is the stack ready?
+│       │
+│       │  Check: test user exists (is_test_user flag), middleware bypass
+│       │  exists (TEST_USER_ID env var), app can start.
+│       │
+│       ├─ YES → set TEST_USER_ID in .env, start the app, go to Test ↓
+│       │
+│       └─ NO → notify the developer, then fix the plumbing:
+│           ├─ No test user in DB → create one with is_test_user flag
+│           ├─ No middleware bypass → add if block to auth function
+│           ├─ App won't start → fix env vars, deps, DB (local-env-secrets.md)
+│           └─ Commit plumbing changes alongside your feature change
+│
+Test:
+│
+├─ API change → curl the endpoints (e2e-server-api-test.md)
+├─ UI / Full-stack → playwright-cli interact (e2e-ui-and-fullstack.md)
+├─ CLI tool → run it, check output (e2e-cli-tool-test.md)
+└─ Library → write consumer script (e2e-library-change-test.md)
 ```
 
 See [E2E Testing](./references/e2e-test.md) for setup details, and [Test Users](./references/e2e-auth-test-user.md) for the test user methodology and framework examples.

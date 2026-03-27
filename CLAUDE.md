@@ -30,13 +30,16 @@ skill.md (entry point)
   ├─ Unit tests → unit-test.md
   ├─ Start the app → local-env-secrets.md (if blocked)
   └─ E2E test → e2e-test.md
-       ├─ Auth: --cookies (default)
-       │    └─ Fallback → e2e-auth-test-user.md
-       ├─ API → e2e-server-api-test.md
-       ├─ UI / Full-stack → e2e-ui-and-fullstack.md
-       │    └─ Quality check → e2e-ui-quality-check.md
-       ├─ CLI → e2e-cli-tool-test.md
-       └─ Library → e2e-library-change-test.md
+       ├─ Scenario A: Developer's laptop → --cookies
+       ├─ Scenario B: Isolated env → TEST_USER_ID
+       │    ├─ Stack not ready? Fix plumbing → e2e-auth-test-user.md
+       │    └─ Stack ready → set env var, proceed
+       └─ Test
+            ├─ API → e2e-server-api-test.md
+            ├─ UI / Full-stack → e2e-ui-and-fullstack.md
+            │    └─ Quality check → e2e-ui-quality-check.md
+            ├─ CLI → e2e-cli-tool-test.md
+            └─ Library → e2e-library-change-test.md
 ```
 
 ## Writing Style
