@@ -6,7 +6,7 @@ This is the playbook agents most often skip or half-ass. "The component renders,
 
 ## Setup
 
-playwright-cli must be installed (see [skill.md Setup](../skill.md#setup)).
+playwright-cli must be installed (see [SKILL.md Setup](../SKILL.md#setup)).
 
 Start the app. Discover the actual start command — don't blindly run `npm run dev`. Every project is different.
 

@@ -6,7 +6,7 @@ This is the whole point of vibe testing. You interact with the running applicati
 
 ## Prerequisites
 
-**playwright-cli** must be installed (see [Setup](../skill.md#setup)).
+**playwright-cli** must be installed (see [Setup](../SKILL.md#setup)).
 
 ## Auth
 

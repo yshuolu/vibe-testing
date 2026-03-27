@@ -10,7 +10,7 @@ This skill uses [playwright-cli](https://github.com/yshuolu/playwright-cli) for 
 
 ```
 skills/
-  skill.md                       # Entry point: philosophy, auth decision tree, commands
+  SKILL.md                       # Entry point: philosophy, auth decision tree, commands
   references/
     e2e-test.md                  # E2E setup: auth, start app, pick playbook
     e2e-auth-test-user.md        # Test user: methodology + framework examples
@@ -26,7 +26,7 @@ skills/
 ## Decision Tree
 
 ```
-skill.md (entry point)
+SKILL.md (entry point)
   ├─ Unit tests → unit-test.md
   ├─ Start the app → local-env-secrets.md (if blocked)
   └─ E2E test → e2e-test.md

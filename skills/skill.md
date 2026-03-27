@@ -1,3 +1,8 @@
+---
+name: vibe-testing
+description: "End-to-end testing that verifies code changes by actually using the running product. Opens a real browser with auth, clicks through, screenshots, and breaks things."
+---
+
 # Vibe Testing
 
 Here's the thing about testing that most agents get completely wrong: they write some unit tests, see green checkmarks, and call it a day. That's not testing. That's wishful thinking.
