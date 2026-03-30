@@ -113,6 +113,8 @@ For any UI or fullstack change, use `playwright-cli` to open a browser and inter
 
 Do NOT close and reopen between tests. The browser stays alive. Use `navigate` to go to a new page.
 
+**Always use headed mode (the default).** Do not pass `--headless`. Headless Chrome has a race condition where the detached process exits before the CDP endpoint is ready, causing silent connection failures. Headed mode is more reliable and lets you visually confirm the browser launched.
+
 ### Commands
 
 ```bash
